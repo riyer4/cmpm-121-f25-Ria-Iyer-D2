@@ -18,8 +18,7 @@ canvas.id = "sketch_canvas";
 document.body.append(canvas);
 
 const ctx = canvas.getContext("2d");
-if (ctx){
+if (ctx) {
   ctx.fillStyle = "green";
   ctx.fillRect(10, 10, 150, 100);
 }
-
