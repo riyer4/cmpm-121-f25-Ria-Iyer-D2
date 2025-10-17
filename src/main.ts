@@ -3,6 +3,8 @@ import "./style.css";
 const lines: Array<Array<{ x: number; y: number }>> = [];
 let currentLine: Array<{ x: number; y: number }> | null = null;
 
+const redoStack: Array<Array<{ x: number; y: number }>> = [];
+
 const h1 = document.createElement("h1");
 h1.textContent = "Sticker Sketchpad";
 document.body.append(h1);
@@ -26,6 +28,7 @@ canvas.addEventListener("mousedown", (e) => {
   lines.push(currentLine);
   currentLine.push({ x: cursor.x, y: cursor.y });
 
+  redoStack.splice(0, redoStack.length);
   canvas.dispatchEvent(new Event("drawing-changed"));
 });
 
@@ -67,3 +70,27 @@ clearButton.addEventListener("click", () => {
   lines.splice(0, lines.length);
   canvas.dispatchEvent(new Event("drawing-changed"));
 });
+
+const undoButton = document.createElement("button");
+undoButton.textContent = "Undo";
+document.body.append(undoButton);
+
+undoButton.addEventListener("click", () => {
+  if (lines.length === 0) return;
+  const lastLine = lines.pop()!;
+  redoStack.push(lastLine);
+  canvas.dispatchEvent(new Event("drawing-changed"));
+});
+
+const redoButton = document.createElement("button");
+redoButton.textContent = "Redo";
+document.body.append(redoButton);
+
+redoButton.addEventListener("click", () => {
+  if (redoStack.length === 0) return;
+  const lineToRedo = redoStack.pop()!;
+  lines.push(lineToRedo);
+  canvas.dispatchEvent(new Event("drawing-changed"));
+});
+
+document.body.append(clearButton, undoButton, redoButton);
