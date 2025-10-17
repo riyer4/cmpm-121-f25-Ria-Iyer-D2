@@ -1,12 +1,5 @@
-.icon {
-  width: 64px;
-  height: 64px;
-  vertical-align: top;
-  border: 30px solid rgb(0, 0, 0);
-  border-radius: 30px;
-}
-
-#sketch_canvas {
-  border: 10px solid black;
+#canvas {
+  border: 2px solid black;
   border-radius: 10px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
 }
