@@ -4,6 +4,9 @@ const displayList: MarkerLine[] = [];
 const redoStack: MarkerLine[] = [];
 let currentLine: MarkerLine | null = null;
 let currentThickness = 2;
+let toolDisplay: Tool | null = null;
+
+//html:
 
 const h1 = document.createElement("h1");
 h1.textContent = "Sticker Sketchpad";
@@ -17,6 +20,7 @@ document.body.append(canvas);
 
 const ctx = canvas.getContext("2d");
 
+//marker
 class MarkerLine {
   private points: { x: number; y: number }[] = [];
   private thickness: number;
@@ -42,8 +46,34 @@ class MarkerLine {
   }
 }
 
+//tool
+class Tool {
+  private x: number;
+  private y: number;
+  private thickness: number;
+
+  constructor(x: number, y: number, thickness: number) {
+    this.x = x;
+    this.y = y;
+    this.thickness = thickness;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = "gray";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+}
+
 const cursor = { active: false, x: 0, y: 0 };
 
+//cursor events:
 canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = e.offsetX;
@@ -56,9 +86,15 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 canvas.addEventListener("mousemove", (e) => {
+  cursor.x = e.offsetX;
+  cursor.y = e.offsetY;
+
+  if (!cursor.active) {
+    toolDisplay = new Tool(cursor.x, cursor.y, currentThickness);
+    canvas.dispatchEvent(new Event("tool-moved"));
+  }
+
   if (cursor.active && currentLine) {
-    cursor.x = e.offsetX;
-    cursor.y = e.offsetY;
     currentLine.drag(cursor.x, cursor.y);
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
@@ -67,16 +103,36 @@ canvas.addEventListener("mousemove", (e) => {
 canvas.addEventListener("mouseup", () => {
   cursor.active = false;
   currentLine = null;
+  toolDisplay = null;
+  canvas.dispatchEvent(new Event("drawing-changed"));
 });
 
+//drawing changed:
 canvas.addEventListener("drawing-changed", () => {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   for (const line of displayList) {
     line.display(ctx);
   }
+
+  if (toolDisplay && !cursor.active) {
+    toolDisplay.draw(ctx);
+  }
 });
+
+//tool moved:
+canvas.addEventListener("tool-moved", () => {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const line of displayList) {
+    line.display(ctx);
+  }
+  if (toolDisplay) {
+    toolDisplay.draw(ctx);
+  }
+});
+
+//buttons:
 
 const clearButton = document.createElement("button");
 clearButton.textContent = "Clear";
@@ -109,8 +165,6 @@ redoButton.addEventListener("click", () => {
   displayList.push(redone);
   canvas.dispatchEvent(new Event("drawing-changed"));
 });
-
-document.body.append(clearButton, undoButton, redoButton);
 
 const thinButton = document.createElement("button");
 thinButton.textContent = "Thin Marker";
