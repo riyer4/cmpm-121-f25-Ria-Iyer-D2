@@ -1,9 +1,8 @@
 import "./style.css";
 
-const lines: Array<Array<{ x: number; y: number }>> = [];
-let currentLine: Array<{ x: number; y: number }> | null = null;
-
-const redoStack: Array<Array<{ x: number; y: number }>> = [];
+const displayList: MarkerLine[] = [];
+const redoStack: MarkerLine[] = [];
+let currentLine: MarkerLine | null = null;
 
 const h1 = document.createElement("h1");
 h1.textContent = "Sticker Sketchpad";
@@ -17,6 +16,28 @@ document.body.append(canvas);
 
 const ctx = canvas.getContext("2d");
 
+class MarkerLine {
+  private points: { x: number; y: number }[] = [];
+
+  constructor(startX: number, startY: number) {
+    this.points.push({ x: startX, y: startY });
+  }
+
+  drag(x: number, y: number) {
+    this.points.push({ x, y });
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    if (this.points.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(this.points[0]!.x, this.points[0]!.y);
+    for (const { x, y } of this.points) {
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
 const cursor = { active: false, x: 0, y: 0 };
 
 canvas.addEventListener("mousedown", (e) => {
@@ -24,11 +45,9 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
 
-  currentLine = [];
-  lines.push(currentLine);
-  currentLine.push({ x: cursor.x, y: cursor.y });
-
-  redoStack.splice(0, redoStack.length);
+  currentLine = new MarkerLine(cursor.x, cursor.y);
+  displayList.push(currentLine);
+  redoStack.splice(0);
   canvas.dispatchEvent(new Event("drawing-changed"));
 });
 
@@ -36,8 +55,7 @@ canvas.addEventListener("mousemove", (e) => {
   if (cursor.active && currentLine) {
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
-    currentLine.push({ x: cursor.x, y: cursor.y });
-
+    currentLine.drag(cursor.x, cursor.y);
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
 });
@@ -51,14 +69,8 @@ canvas.addEventListener("drawing-changed", () => {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  for (const line of lines) {
-    if (line.length < 2) continue;
-    ctx.beginPath();
-    ctx.moveTo(line[0]!.x, line[0]!.y);
-    for (const point of line) {
-      ctx.lineTo(point.x, point.y);
-    }
-    ctx.stroke();
+  for (const line of displayList) {
+    line.display(ctx);
   }
 });
 
@@ -67,7 +79,8 @@ clearButton.textContent = "Clear";
 document.body.append(clearButton);
 
 clearButton.addEventListener("click", () => {
-  lines.splice(0, lines.length);
+  displayList.splice(0);
+  redoStack.splice(0);
   canvas.dispatchEvent(new Event("drawing-changed"));
 });
 
@@ -76,9 +89,9 @@ undoButton.textContent = "Undo";
 document.body.append(undoButton);
 
 undoButton.addEventListener("click", () => {
-  if (lines.length === 0) return;
-  const lastLine = lines.pop()!;
-  redoStack.push(lastLine);
+  if (displayList.length === 0) return;
+  const undone = displayList.pop()!;
+  redoStack.push(undone);
   canvas.dispatchEvent(new Event("drawing-changed"));
 });
 
@@ -88,8 +101,8 @@ document.body.append(redoButton);
 
 redoButton.addEventListener("click", () => {
   if (redoStack.length === 0) return;
-  const lineToRedo = redoStack.pop()!;
-  lines.push(lineToRedo);
+  const redone = redoStack.pop()!;
+  displayList.push(redone);
   canvas.dispatchEvent(new Event("drawing-changed"));
 });
 
