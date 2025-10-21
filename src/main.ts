@@ -1,10 +1,19 @@
 import "./style.css";
 
-const displayList: MarkerLine[] = [];
-const redoStack: MarkerLine[] = [];
-let currentLine: MarkerLine | null = null;
+interface DrawableCommand {
+  drag(x: number, y: number): void;
+  display(ctx: CanvasRenderingContext2D): void;
+}
+
+const displayList: DrawableCommand[] = [];
+const redoStack: DrawableCommand[] = [];
+let currentLine: DrawableCommand | null = null;
+
+let currentPreview: Tool | Sticker | null = null;
+
 let currentThickness = 2;
-let toolDisplay: Tool | null = null;
+let currentTool: "marker" | "sticker" = "marker";
+let currentSticker: string | null = null;
 
 //html:
 
@@ -21,7 +30,7 @@ document.body.append(canvas);
 const ctx = canvas.getContext("2d");
 
 //marker
-class MarkerLine {
+class MarkerLine implements DrawableCommand {
   private points: { x: number; y: number }[] = [];
   private thickness: number;
 
@@ -43,30 +52,67 @@ class MarkerLine {
       ctx.lineTo(x, y);
     }
     ctx.stroke();
+    ctx.strokeStyle = "black";
   }
 }
 
 //tool
 class Tool {
-  private x: number;
-  private y: number;
-  private thickness: number;
-
-  constructor(x: number, y: number, thickness: number) {
-    this.x = x;
-    this.y = y;
-    this.thickness = thickness;
-  }
+  constructor(
+    private x: number,
+    private y: number,
+    private thickness: number,
+  ) {}
 
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
-
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
     ctx.strokeStyle = "gray";
     ctx.lineWidth = 1;
     ctx.stroke();
+    ctx.restore();
+  }
+}
 
+//stickers
+
+class StickerCommand implements DrawableCommand {
+  private x: number;
+  private y: number;
+  private emoji: string;
+
+  constructor(x: number, y: number, emoji: string) {
+    this.x = x;
+    this.y = y;
+    this.emoji = emoji;
+  }
+
+  drag(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  display(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.font = "32px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(this.emoji, this.x, this.y);
+    ctx.restore();
+  }
+}
+
+class Sticker {
+  constructor(private x: number, private y: number, private emoji: string) {}
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.globalAlpha = 0.5; // semi-transparent
+    ctx.font = "32px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(this.emoji, this.x, this.y);
     ctx.restore();
   }
 }
@@ -74,13 +120,21 @@ class Tool {
 const cursor = { active: false, x: 0, y: 0 };
 
 //cursor events:
+
 canvas.addEventListener("mousedown", (e) => {
   cursor.active = true;
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
 
-  currentLine = new MarkerLine(cursor.x, cursor.y, currentThickness);
-  displayList.push(currentLine);
+  if (currentTool === "marker") {
+    currentLine = new MarkerLine(cursor.x, cursor.y, currentThickness);
+    displayList.push(currentLine);
+  } else if (currentTool === "sticker" && currentSticker) {
+    const sticker = new StickerCommand(cursor.x, cursor.y, currentSticker);
+    displayList.push(sticker);
+    currentLine = sticker;
+  }
+
   redoStack.splice(0);
   canvas.dispatchEvent(new Event("drawing-changed"));
 });
@@ -89,48 +143,42 @@ canvas.addEventListener("mousemove", (e) => {
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
 
-  if (!cursor.active) {
-    toolDisplay = new Tool(cursor.x, cursor.y, currentThickness);
-    canvas.dispatchEvent(new Event("tool-moved"));
-  }
-
   if (cursor.active && currentLine) {
     currentLine.drag(cursor.x, cursor.y);
     canvas.dispatchEvent(new Event("drawing-changed"));
+  } else {
+    if (currentTool === "marker") {
+      currentPreview = new Tool(cursor.x, cursor.y, currentThickness);
+    } else if (currentTool === "sticker" && currentSticker) {
+      currentPreview = new Sticker(cursor.x, cursor.y, currentSticker);
+    } else {
+      currentPreview = null;
+    }
+    canvas.dispatchEvent(new Event("tool-moved"));
   }
 });
 
 canvas.addEventListener("mouseup", () => {
   cursor.active = false;
   currentLine = null;
-  toolDisplay = null;
-  canvas.dispatchEvent(new Event("drawing-changed"));
 });
 
 //drawing changed:
-canvas.addEventListener("drawing-changed", () => {
+canvas.addEventListener("drawing-changed", () => redraw());
+canvas.addEventListener("tool-moved", () => redraw());
+
+function redraw() {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const line of displayList) {
-    line.display(ctx);
+
+  for (const cmd of displayList) {
+    cmd.display(ctx);
   }
 
-  if (toolDisplay && !cursor.active) {
-    toolDisplay.draw(ctx);
+  if (currentPreview && !cursor.active) {
+    currentPreview.draw(ctx);
   }
-});
-
-//tool moved:
-canvas.addEventListener("tool-moved", () => {
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const line of displayList) {
-    line.display(ctx);
-  }
-  if (toolDisplay) {
-    toolDisplay.draw(ctx);
-  }
-});
+}
 
 //buttons:
 
@@ -179,10 +227,42 @@ thinButton.addEventListener("click", () => {
   currentThickness = 2;
   thinButton.classList.add("selectedTool");
   thickButton.classList.remove("selectedTool");
+  currentTool = "marker";
 });
 
 thickButton.addEventListener("click", () => {
   currentThickness = 6;
   thickButton.classList.add("selectedTool");
   thinButton.classList.remove("selectedTool");
+  currentTool = "marker";
 });
+
+const tacoButton = document.createElement("button");
+tacoButton.textContent = "🌮";
+tacoButton.onclick = () => selectSticker("🌮", tacoButton);
+document.body.append(tacoButton);
+
+const burritoButton = document.createElement("button");
+burritoButton.textContent = "🌯";
+burritoButton.onclick = () => selectSticker("🌯", burritoButton);
+document.body.append(burritoButton);
+
+const bellButton = document.createElement("button");
+bellButton.textContent = "🔔";
+bellButton.onclick = () => selectSticker("🔔", bellButton);
+document.body.append(bellButton);
+
+function updateSelectedTool(selected: HTMLButtonElement) {
+  document.querySelectorAll("button").forEach((btn) => {
+    btn.classList.remove("selectedTool");
+  });
+  selected.classList.add("selectedTool");
+  canvas.dispatchEvent(new Event("tool-moved"));
+}
+
+function selectSticker(emoji: string, button: HTMLButtonElement) {
+  currentTool = "sticker";
+  currentSticker = emoji;
+  updateSelectedTool(button);
+  canvas.dispatchEvent(new Event("tool-moved"));
+}
