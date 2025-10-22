@@ -25,7 +25,6 @@ const canvas = document.createElement("canvas");
 canvas.width = 256;
 canvas.height = 256;
 canvas.id = "canvas";
-document.body.append(canvas);
 
 const ctx = canvas.getContext("2d");
 
@@ -184,7 +183,6 @@ function redraw() {
 
 const clearButton = document.createElement("button");
 clearButton.textContent = "Clear";
-document.body.append(clearButton);
 
 clearButton.addEventListener("click", () => {
   displayList.splice(0);
@@ -194,7 +192,6 @@ clearButton.addEventListener("click", () => {
 
 const undoButton = document.createElement("button");
 undoButton.textContent = "Undo";
-document.body.append(undoButton);
 
 undoButton.addEventListener("click", () => {
   if (displayList.length === 0) return;
@@ -205,7 +202,6 @@ undoButton.addEventListener("click", () => {
 
 const redoButton = document.createElement("button");
 redoButton.textContent = "Redo";
-document.body.append(redoButton);
 
 redoButton.addEventListener("click", () => {
   if (redoStack.length === 0) return;
@@ -217,40 +213,35 @@ redoButton.addEventListener("click", () => {
 const thinButton = document.createElement("button");
 thinButton.textContent = "Thin Marker";
 thinButton.classList.add("selectedTool"); //default
-document.body.append(thinButton);
 
 const thickButton = document.createElement("button");
 thickButton.textContent = "Thick Marker";
-document.body.append(thickButton);
 
 thinButton.addEventListener("click", () => {
   currentThickness = 2;
-  thinButton.classList.add("selectedTool");
-  thickButton.classList.remove("selectedTool");
   currentTool = "marker";
+  currentSticker = null;
+  updateSelectedTool(thinButton);
 });
 
 thickButton.addEventListener("click", () => {
   currentThickness = 6;
-  thickButton.classList.add("selectedTool");
-  thinButton.classList.remove("selectedTool");
   currentTool = "marker";
+  currentSticker = null;
+  updateSelectedTool(thickButton);
 });
 
 const tacoButton = document.createElement("button");
 tacoButton.textContent = "🌮";
 tacoButton.onclick = () => selectSticker("🌮", tacoButton);
-document.body.append(tacoButton);
 
 const burritoButton = document.createElement("button");
 burritoButton.textContent = "🌯";
 burritoButton.onclick = () => selectSticker("🌯", burritoButton);
-document.body.append(burritoButton);
 
 const bellButton = document.createElement("button");
 bellButton.textContent = "🔔";
 bellButton.onclick = () => selectSticker("🔔", bellButton);
-document.body.append(bellButton);
 
 function updateSelectedTool(selected: HTMLButtonElement) {
   document.querySelectorAll("button").forEach((btn) => {
@@ -266,3 +257,37 @@ function selectSticker(emoji: string, button: HTMLButtonElement) {
   updateSelectedTool(button);
   canvas.dispatchEvent(new Event("tool-moved"));
 }
+
+const mainWrapper = document.createElement("div");
+mainWrapper.classList.add("main-wrapper");
+
+mainWrapper.appendChild(h1);
+
+const container = document.createElement("div");
+container.classList.add("container");
+
+const sidePanel = document.createElement("div");
+sidePanel.classList.add("side-panel");
+
+const rightPanel = document.createElement("div");
+rightPanel.classList.add("right-panel");
+
+const canvasContainer = document.createElement("div");
+canvasContainer.classList.add("canvas-container");
+canvasContainer.appendChild(canvas);
+
+const bottomPanel = document.createElement("div");
+bottomPanel.classList.add("bottom-panel");
+
+container.appendChild(sidePanel);
+container.appendChild(canvasContainer);
+container.appendChild(rightPanel);
+
+mainWrapper.appendChild(container);
+mainWrapper.appendChild(bottomPanel);
+
+sidePanel.append(tacoButton, burritoButton, bellButton);
+rightPanel.append(thinButton, thickButton);
+bottomPanel.append(clearButton, undoButton, redoButton);
+
+document.body.appendChild(mainWrapper);
