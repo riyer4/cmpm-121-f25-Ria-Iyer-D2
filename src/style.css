@@ -41,7 +41,7 @@ body {
 .canvas-container {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: baseline;
 }
 
 .side-panel,
@@ -56,8 +56,8 @@ body {
 .bottom-panel {
   display: flex;
   gap: 10px;
-  justify-content: center;
-  width: 256px;
+  justify-content: baseline;
+  width: 276px;
 }
 
 button {
