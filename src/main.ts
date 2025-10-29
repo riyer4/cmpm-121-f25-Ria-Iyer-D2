@@ -15,6 +15,8 @@ let currentThickness = 2;
 let currentTool: "marker" | "sticker" = "marker";
 let currentSticker: string | null = null;
 
+const stickers: string[] = ["🌮", "🌯", "🔔"];
+
 //html:
 
 const h1 = document.createElement("h1");
@@ -231,17 +233,27 @@ thickButton.addEventListener("click", () => {
   updateSelectedTool(thickButton);
 });
 
-const tacoButton = document.createElement("button");
-tacoButton.textContent = "🌮";
-tacoButton.onclick = () => selectSticker("🌮", tacoButton);
+function renderStickerButtons() {
+  sidePanel.innerHTML = ""; // Clear existing buttons
 
-const burritoButton = document.createElement("button");
-burritoButton.textContent = "🌯";
-burritoButton.onclick = () => selectSticker("🌯", burritoButton);
+  stickers.forEach((emoji) => {
+    const btn = document.createElement("button");
+    btn.textContent = emoji;
+    btn.onclick = () => selectSticker(emoji, btn);
+    sidePanel.appendChild(btn);
+  });
 
-const bellButton = document.createElement("button");
-bellButton.textContent = "🔔";
-bellButton.onclick = () => selectSticker("🔔", bellButton);
+  const custom = document.createElement("button");
+  custom.textContent = "Custom Sticker";
+  custom.onclick = () => {
+    const newSticker = prompt("Enter your custom sticker", "🧽"); // from the directions
+    if (newSticker && newSticker.trim() !== "") {
+      stickers.push(newSticker.trim());
+      renderStickerButtons();
+    }
+  };
+  sidePanel.appendChild(custom);
+}
 
 function updateSelectedTool(selected: HTMLButtonElement) {
   document.querySelectorAll("button").forEach((btn) => {
@@ -279,6 +291,8 @@ canvasContainer.appendChild(canvas);
 const bottomPanel = document.createElement("div");
 bottomPanel.classList.add("bottom-panel");
 
+renderStickerButtons();
+
 container.appendChild(sidePanel);
 container.appendChild(canvasContainer);
 container.appendChild(rightPanel);
@@ -286,7 +300,6 @@ container.appendChild(rightPanel);
 mainWrapper.appendChild(container);
 mainWrapper.appendChild(bottomPanel);
 
-sidePanel.append(tacoButton, burritoButton, bellButton);
 rightPanel.append(thinButton, thickButton);
 bottomPanel.append(clearButton, undoButton, redoButton);
 
