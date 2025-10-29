@@ -234,7 +234,7 @@ thickButton.addEventListener("click", () => {
 });
 
 function renderStickerButtons() {
-  sidePanel.innerHTML = ""; // Clear existing buttons
+  sidePanel.innerHTML = "";
 
   stickers.forEach((emoji) => {
     const btn = document.createElement("button");

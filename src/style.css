@@ -34,7 +34,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 20px;
 }
 
@@ -56,7 +56,7 @@ body {
 .bottom-panel {
   display: flex;
   gap: 10px;
-  justify-content: baseline;
+  justify-content: center;
   width: 276px;
 }
 
