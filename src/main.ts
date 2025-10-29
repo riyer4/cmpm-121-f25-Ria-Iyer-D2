@@ -291,6 +291,9 @@ canvasContainer.appendChild(canvas);
 const bottomPanel = document.createElement("div");
 bottomPanel.classList.add("bottom-panel");
 
+const bottomRow = document.createElement("div");
+bottomRow.classList.add("bottom-row");
+
 renderStickerButtons();
 
 container.appendChild(sidePanel);
@@ -299,8 +302,33 @@ container.appendChild(rightPanel);
 
 mainWrapper.appendChild(container);
 mainWrapper.appendChild(bottomPanel);
+mainWrapper.appendChild(bottomRow);
 
 rightPanel.append(thinButton, thickButton);
 bottomPanel.append(clearButton, undoButton, redoButton);
 
 document.body.appendChild(mainWrapper);
+
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export";
+
+exportButton.addEventListener("click", () => {
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  const exportCtx = exportCanvas.getContext("2d");
+  if (!exportCtx) return;
+
+  const scaleX = exportCanvas.width / canvas.width;
+  const scaleY = exportCanvas.height / canvas.height;
+  exportCtx.scale(scaleX, scaleY);
+
+  displayList.forEach((cmd) => cmd.display(exportCtx));
+
+  const anchor = document.createElement("a");
+  anchor.href = exportCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
+});
+
+bottomRow.appendChild(exportButton);

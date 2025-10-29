@@ -60,6 +60,13 @@ body {
   width: 276px;
 }
 
+.bottom-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  width: 276px;
+}
+
 button {
   font-size: 1rem;
   padding: 8px 12px;
