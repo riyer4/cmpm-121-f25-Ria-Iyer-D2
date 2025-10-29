@@ -8,7 +8,7 @@ interface DrawableCommand {
 const displayList: DrawableCommand[] = [];
 const redoStack: DrawableCommand[] = [];
 let currentLine: DrawableCommand | null = null;
-
+let currentColor = "#000000";
 let currentPreview: Tool | Sticker | null = null;
 
 let currentThickness = 2;
@@ -34,10 +34,17 @@ const ctx = canvas.getContext("2d");
 class MarkerLine implements DrawableCommand {
   private points: { x: number; y: number }[] = [];
   private thickness: number;
+  private color: string;
 
-  constructor(startX: number, startY: number, thickness: number) {
+  constructor(
+    startX: number,
+    startY: number,
+    thickness: number,
+    color: string,
+  ) {
     this.points.push({ x: startX, y: startY });
     this.thickness = thickness;
+    this.color = color;
   }
 
   drag(x: number, y: number) {
@@ -46,6 +53,8 @@ class MarkerLine implements DrawableCommand {
 
   display(ctx: CanvasRenderingContext2D) {
     if (this.points.length < 2) return;
+    ctx.save();
+    ctx.strokeStyle = this.color;
     ctx.lineWidth = this.thickness;
     ctx.beginPath();
     ctx.moveTo(this.points[0]!.x, this.points[0]!.y);
@@ -53,7 +62,7 @@ class MarkerLine implements DrawableCommand {
       ctx.lineTo(x, y);
     }
     ctx.stroke();
-    ctx.strokeStyle = "black";
+    ctx.restore();
   }
 }
 
@@ -128,7 +137,12 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.y = e.offsetY;
 
   if (currentTool === "marker") {
-    currentLine = new MarkerLine(cursor.x, cursor.y, currentThickness);
+    currentLine = new MarkerLine(
+      cursor.x,
+      cursor.y,
+      currentThickness,
+      currentColor,
+    );
     displayList.push(currentLine);
   } else if (currentTool === "sticker" && currentSticker) {
     const sticker = new StickerCommand(cursor.x, cursor.y, currentSticker);
@@ -332,3 +346,13 @@ exportButton.addEventListener("click", () => {
 });
 
 bottomRow.appendChild(exportButton);
+
+const colorPicker = document.createElement("input");
+colorPicker.type = "color";
+colorPicker.value = currentColor;
+
+colorPicker.addEventListener("input", (e) => {
+  currentColor = (e.target as HTMLInputElement).value;
+});
+
+rightPanel.appendChild(colorPicker);
