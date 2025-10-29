@@ -217,7 +217,7 @@ thinButton.textContent = "✏️";
 thinButton.classList.add("selectedTool"); //default
 
 const thickButton = document.createElement("button");
-thickButton.textContent = "🖌️";
+thickButton.textContent = "🖋️";
 
 thinButton.addEventListener("click", () => {
   currentThickness = 2;
@@ -246,7 +246,7 @@ function renderStickerButtons() {
   const custom = document.createElement("button");
   custom.textContent = "+";
   custom.onclick = () => {
-    const newSticker = prompt("Enter your custom sticker", "🧽"); // from the directions
+    const newSticker = prompt("Enter your custom sticker", "🧀"); // from the directions
     if (newSticker && newSticker.trim() !== "") {
       stickers.push(newSticker.trim());
       renderStickerButtons();
