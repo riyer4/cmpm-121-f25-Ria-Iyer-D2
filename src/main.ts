@@ -213,11 +213,11 @@ redoButton.addEventListener("click", () => {
 });
 
 const thinButton = document.createElement("button");
-thinButton.textContent = "Thin Marker";
+thinButton.textContent = "✏️";
 thinButton.classList.add("selectedTool"); //default
 
 const thickButton = document.createElement("button");
-thickButton.textContent = "Thick Marker";
+thickButton.textContent = "🖌️";
 
 thinButton.addEventListener("click", () => {
   currentThickness = 2;
@@ -244,7 +244,7 @@ function renderStickerButtons() {
   });
 
   const custom = document.createElement("button");
-  custom.textContent = "Custom Sticker";
+  custom.textContent = "+";
   custom.onclick = () => {
     const newSticker = prompt("Enter your custom sticker", "🧽"); // from the directions
     if (newSticker && newSticker.trim() !== "") {

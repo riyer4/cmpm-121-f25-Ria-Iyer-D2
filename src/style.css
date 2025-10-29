@@ -34,14 +34,14 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 20px;
 }
 
 .canvas-container {
   display: flex;
   justify-content: center;
-  align-items: baseline;
+  align-items: center;
 }
 
 .side-panel,
@@ -61,7 +61,7 @@ body {
 }
 
 .bottom-row {
-  display: flex;
+  display: inline;
   gap: 10px;
   justify-content: center;
   width: 276px;
